@@ -1,0 +1,50 @@
+/*
+ * SEN54 on nRF5340 DK i2c1 (P1.02 SDA / P1.03 SCL).
+ * - clock-frequency: SEN5x max 100kHz -> standard mode
+ * - sen54@69: our sensor node. reg = I2C address 0x69.
+ *   No compatible (= no Zephyr driver). HAL only takes the bus via I2C_DT_SPEC_GET.
+ * - bias-pull-up: enable nRF internal pull-ups so external 10k resistors
+ *   aren't strictly needed for bench testing. (Weak ~13k; add external 10k for real use.)
+ */
+#include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
+
+&pinctrl {
+	i2c1_default: i2c1_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 2)>,
+				<NRF_PSEL(TWIM_SCL, 1, 3)>;
+			bias-pull-up;
+		};
+	};
+
+	i2c1_sleep: i2c1_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 2)>,
+				<NRF_PSEL(TWIM_SCL, 1, 3)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <100000>;
+
+	sen54: sen54@69 {
+		reg = <0x69>;
+	};
+
+	/* BMV080 particulate sensor. Address 0x54 (CSB=GND, MISO=GND).
+	 * No compatible: Bosch proprietary lib drives it; HAL takes the bus only.
+	 * PS pin must be tied to VDDIO(3.3V) on the hardware to select I2C. */
+	bmv080: bmv080@54 {
+		reg = <0x54>;
+	};
+
+	/* SHT40 temp/humidity. Uses the mainline Zephyr sht4x driver (no lib). */
+	sht40: sht4x@44 {
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;   /* 0=low 1=med 2=high */
+	};
+};

@@ -1,1 +1,4 @@
 build*/
+nRF5340DK/
+.DS_Store
+.claude/
