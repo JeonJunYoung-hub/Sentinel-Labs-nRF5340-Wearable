@@ -5,12 +5,11 @@ project(nRF5340_Wearable)
 
 target_sources(app PRIVATE
     src/main.c
-    src/sen5x/sen5x_i2c.c
-    src/sen5x/sensirion_i2c.c
-    src/sen5x/sensirion_common.c
-    src/sen5x/sensirion_i2c_hal.c
+    src/frame.c
+    src/store.c
+    src/ble.c
 )
-target_include_directories(app PRIVATE src/sen5x src/bmv080)
+target_include_directories(app PRIVATE src src/bmv080)
 
 # BMV080: prebuilt Bosch libs (m33f hard-float). The two archives reference each
 # other, so wrap them in a linker group so ld rescans until resolved.

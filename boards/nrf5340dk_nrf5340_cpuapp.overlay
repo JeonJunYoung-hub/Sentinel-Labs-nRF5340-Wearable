@@ -1,12 +1,32 @@
 /*
- * SEN54 on nRF5340 DK i2c1 (P1.02 SDA / P1.03 SCL).
- * - clock-frequency: SEN5x max 100kHz -> standard mode
- * - sen54@69: our sensor node. reg = I2C address 0x69.
- *   No compatible (= no Zephyr driver). HAL only takes the bus via I2C_DT_SPEC_GET.
- * - bias-pull-up: enable nRF internal pull-ups so external 10k resistors
- *   aren't strictly needed for bench testing. (Weak ~13k; add external 10k for real use.)
+ * nRF5340 DK: BMV080 + SHT40 on i2c1 (P1.02 SDA / P1.03 SCL), passive buzzer
+ * on pwm1 (P1.04), NVS storage in internal flash.
+ *
+ * - clock-frequency: 100kHz standard mode (SHT40/BMV080 both fine)
+ * - bias-pull-up: nRF internal pull-ups so external 10k aren't strictly needed
+ *   for bench testing. (Weak ~13k; add external 10k for real use.)
  */
 #include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	/* Passive buzzer: it has no oscillator of its own, so a DC level only
+	 * clicks on the edges - it needs a square wave. Driven from pwm1 on
+	 * P1.04 (Arduino D2), unused by the DK (LEDs P0.28-31, buttons
+	 * P0.08/09/23/24, i2c1 P1.02/03, spi4 P1.13-15, uart1 P1.00/01).
+	 * pwm0 is taken by the board's pwm_led0 on P0.28.
+	 *
+	 * The period here is only a default - main.c sets its own per note to
+	 * play the melody. */
+	buzzers {
+		compatible = "pwm-leds";
+
+		buzzer: buzzer {
+			pwms = <&pwm1 0 PWM_HZ(1319) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
 
 &pinctrl {
 	i2c1_default: i2c1_default {
@@ -24,15 +44,31 @@
 			low-power-enable;
 		};
 	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 4)>;
+		};
+	};
+
+	pwm1_sleep: pwm1_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 4)>;
+			low-power-enable;
+		};
+	};
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &i2c1 {
 	status = "okay";
 	clock-frequency = <100000>;
-
-	sen54: sen54@69 {
-		reg = <0x69>;
-	};
 
 	/* BMV080 particulate sensor. Address 0x54 (CSB=GND, MISO=GND).
 	 * No compatible: Bosch proprietary lib drives it; HAL takes the bus only.
@@ -47,4 +83,21 @@
 		reg = <0x44>;
 		repeatability = <2>;   /* 0=low 1=med 2=high */
 	};
+};
+
+/*
+ * 24 h of one-minute records is 1440 * (14 B + 8 B NVS overhead) = ~31 KB, so
+ * the board default 32 KB storage_partition would have no room left for
+ * garbage collection. Take the space from slot1_partition, the MCUboot
+ * secondary slot, which is dead weight here - this build has no DFU.
+ *
+ *   slot1   0x84000 .. 0xD8000  (336K, was 464K)
+ *   storage 0xD8000 .. 0x100000 (160K, was 32K)
+ */
+&slot1_partition {
+	reg = <0x00084000 0x00054000>;
+};
+
+&storage_partition {
+	reg = <0x000d8000 0x00028000>;
 };
