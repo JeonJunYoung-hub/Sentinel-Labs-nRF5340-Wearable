@@ -1,5 +1,10 @@
 # nRF5340 Wearable — 공기질 측정 노드
 
+> **Sentinel Labs** · **모두의 창업 (Startup for All)** 창업 프로젝트에서 진행 중인
+> 건설현장 분진 모니터링 시스템의 하드웨어 노드다.
+> Part of a construction-site dust monitoring system built under the
+> **Startup for All (모두의 창업)** startup program.
+
 nRF5340 DK (Zephyr / nRF Connect SDK). 미세먼지를 1초마다 읽어 **30초 평균을 플래시에
 쌓고**, 버튼을 누르면 **BLE로 모바일 앱에 넘긴다.** 기준치를 넘으면 부저가 운다.
 
