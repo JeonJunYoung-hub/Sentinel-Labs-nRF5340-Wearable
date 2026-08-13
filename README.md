@@ -10,6 +10,12 @@ over BLE** at the press of a button. A buzzer sounds when a threshold is crossed
 
 ## Hardware
 
+![Bench setup](docs/bench.jpg)
+
+Top: the **BMV080** breakout — note the `I2C / SPI MODE` silk, the mode pin has
+to be strapped for I2C. Left: **SHT40**. Both drop onto the breadboard's shared
+`i2c1` rail with the buzzer; the **nRF5340 DK** is below.
+
 **Two sensors share the `i2c1` bus and are told apart only by address.**
 
 | Device | Connection | Notes |
